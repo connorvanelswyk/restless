@@ -1,0 +1,14 @@
+AWSTemplateFormatVersion : '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: A simple serverless project to convert transmit SOAP messages in a RESTful manner
+Resources:
+  restless:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: go1.x
+      Handler: restless
+      CodeUri: .
+      Timeout: 5
+      Environment:
+        Variables:
+          SECRET: "35c760f4-b3dc-4657-b4f3-2c6566d4f42e"
