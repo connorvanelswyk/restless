@@ -11,17 +11,9 @@ import (
 	"html"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
 )
-
-const willkommen = "Event handling commenced."
-const tschuss = "Event handling concluded."
-const unmarshalE = "Error unmarshalling body."
-const loadingE = "Error loading request."
-const bodyErr = "Error reading response body."
-const reqUrlE = "Error reading request Url."
 
 type requester struct {
 	ServiceUrl        string            `json:"serviceUrl"` // The endpoint for the desired SOAP service
@@ -34,87 +26,102 @@ type requester struct {
 
 func Handler(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 
-	log.Print(willkommen)
-
-	returnVal := events.APIGatewayProxyResponse{
-		Body:       "",
-		StatusCode: 200,
-	}
-
+	// unmarshal the proxy request body
 	r := requester{}
 	err := json.Unmarshal([]byte(req.Body), &r)
 	if err != nil {
-		log.Print(unmarshalE)
-	}
-
-	// get the example request
-	resp, err := http.Get(r.RequestUrl)
-	if err != nil {
-		log.Print(reqUrlE)
 		panic(err.Error())
 	}
 
-	// read response body
-	data, err := ioutil.ReadAll(resp.Body)
+	// get the example service request url
+	resp, err := http.Get(r.RequestUrl)
 	if err != nil {
-		log.Print(loadingE)
+		panic(err.Error())
 	}
 
-	// create doc from reader
-	doc := etree.NewDocument()
-	_, err = doc.ReadFrom(getIsoDecodedReader(data))
+	// read the example service response body
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		panic(err.Error())
+	}
 
-	// set a different value
-	// todo - read map from requester
-	e := doc.FindElement("//listZipCodeList")
-	e.SetText("33401")
+	// create xml from example service request body
+	reqXml := etree.NewDocument()
+	_, err = reqXml.ReadFrom(getIsoDecodedReader(data))
+
+	updateRequestXml(r.ResponseMap, *reqXml)
 
 	// write it to a string for request body
-	s, err := doc.WriteToString()
+	s, err := reqXml.WriteToString()
+	if err != nil {
+		panic(err.Error())
+	}
 
-	// create the request
+	// create the service request and set the request headers
 	request, err := http.NewRequest(r.RequestMethod, r.ServiceUrl, strings.NewReader(s))
 	if err != nil {
 		panic(err.Error())
 	}
-
-	// set request headers
-	client := &http.Client{}
 	for k, v := range r.RequestProperties {
 		request.Header.Add(k, v)
 	}
 
-	// get the response
+	// create client and get response from service
+	client := &http.Client{}
 	resp, err = client.Do(request)
 	if err != nil {
 		panic(err.Error())
 	}
 
-	// read response body
+	// read response body into bytes
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Print(bodyErr)
+		panic(err.Error())
 	}
 
-	responseDoc := etree.NewDocument()
-	_, err = responseDoc.ReadFrom(getIsoDecodedReader(bodyBytes))
+	// marshal response body bytes into xml string
+	respXml := etree.NewDocument()
+	_, err = respXml.ReadFrom(getIsoDecodedReader(bodyBytes))
+	s, err = respXml.WriteToString()
 
-	// write it to a string for request body
-	s, err = responseDoc.WriteToString()
-	s = html.UnescapeString(s)
+	// create doc from response xml where html is unescaped
+	doc := etree.NewDocument()
+	_, err = doc.ReadFrom(strings.NewReader(html.UnescapeString(s)))
 
-	// todo - read map from requester
+	// create json map from parsing doc element text
+	m := make(map[string]string)
+	for k := range r.ResponseMap {
+		e := doc.FindElement("//" + k)
+		m[k] = e.Text()
+		// todo - support lists and maps
+	}
 
-	returnVal.Body = s
-
-	log.Print(tschuss)
+	// marshal map into json string for response body
+	j, err := json.Marshal(m)
+	returnVal := events.APIGatewayProxyResponse{
+		Body:            string(j),
+		StatusCode:      200,
+		IsBase64Encoded: false,
+	}
 
 	return returnVal, nil
 }
 
-// convert from ISO-8859-1 to native UTF-8
-func getIsoDecodedReader(b []byte) (reader io.Reader) {
+// where b is ISO-8859-1
+//   and r is UTF-8
+func getIsoDecodedReader(b []byte) (r io.Reader) {
 	return charmap.ISO8859_1.NewDecoder().Reader(bytes.NewReader(b))
+}
+
+//  update request xml (d) with properties
+//    from request map (m)
+//   where request map keys are element tag names
+//     and request map values are element text values
+func updateRequestXml(m map[string]string, d etree.Document) {
+	for k, v := range m {
+		e := d.FindElement("//" + k)
+		e.SetText(v)
+	}
 }
 
 func main() {
