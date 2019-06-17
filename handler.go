@@ -1,120 +1,128 @@
 package main
 
 import (
-	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/json"
+	"github.com/antchfx/xmlquery"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/beevik/etree"
 	"golang.org/x/text/encoding/charmap"
-	"html"
 	"io"
-	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
 )
 
-const willkommen = "Event handling commenced."
-const tschuss = "Event handling concluded."
-const unmarshalE = "Error unmarshalling body."
-const loadingE = "Error loading request."
-const bodyErr = "Error reading response body."
-const reqUrlE = "Error reading request Url."
+// M is an alias for map[string]interface{}
+type M map[string]interface{}
 
-type requester struct {
-	ServiceUrl        string            `json:"serviceUrl"` // The endpoint for the desired SOAP service
-	RequestUrl        string            `json:"requestUrl"` // The location of an empty or sample SOAP service request
-	RequestMethod     string            `json:"requestMethod"`
-	RequestProperties map[string]string `json:"requestProperties"`
-	RequestMap        map[string]string `json:"requestMap"`
-	ResponseMap       map[string]string `json:"responseMap"`
-}
+func Handler(ctx context.Context, in events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 
-func Handler(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-
-	log.Print(willkommen)
-
-	returnVal := events.APIGatewayProxyResponse{
-		Body:       "",
-		StatusCode: 200,
-	}
-
-	r := requester{}
-	err := json.Unmarshal([]byte(req.Body), &r)
+	r, err := NewRequester([]byte(in.Body))
 	if err != nil {
-		log.Print(unmarshalE)
+		return newBlankAPIGatewayProxyResponse(), err
 	}
 
-	// get the example request
-	resp, err := http.Get(r.RequestUrl)
+	s, err := NewSoapRequestBody(r)
 	if err != nil {
-		log.Print(reqUrlE)
-		panic(err.Error())
+		return newBlankAPIGatewayProxyResponse(), err
 	}
 
-	// read response body
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Print(loadingE)
-	}
-
-	// create doc from reader
-	doc := etree.NewDocument()
-	_, err = doc.ReadFrom(getIsoDecodedReader(data))
-
-	// set a different value
-	// todo - read map from requester
-	e := doc.FindElement("//listZipCodeList")
-	e.SetText("33401")
-
-	// write it to a string for request body
-	s, err := doc.WriteToString()
-
-	// create the request
 	request, err := http.NewRequest(r.RequestMethod, r.ServiceUrl, strings.NewReader(s))
 	if err != nil {
-		panic(err.Error())
+		return newBlankAPIGatewayProxyResponse(), err
 	}
-
-	// set request headers
-	client := &http.Client{}
 	for k, v := range r.RequestProperties {
 		request.Header.Add(k, v)
 	}
 
-	// get the response
-	resp, err = client.Do(request)
+	// create client and get response from service
+	client := &http.Client{}
+	resp, err := client.Do(request)
 	if err != nil {
-		panic(err.Error())
+		return newBlankAPIGatewayProxyResponse(), err
 	}
 
-	// read response body
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Print(bodyErr)
+	var reader io.ReadCloser
+	switch resp.Header.Get("Content-Encoding") {
+	case "gzip":
+		reader, err = gzip.NewReader(resp.Body)
+		if err != nil {
+			return newBlankAPIGatewayProxyResponse(), err
+		}
+	default:
+		reader = resp.Body
 	}
 
-	responseDoc := etree.NewDocument()
-	_, err = responseDoc.ReadFrom(getIsoDecodedReader(bodyBytes))
+	doc, err := xmlquery.Parse(reader)
+	if err != nil {
+		return newBlankAPIGatewayProxyResponse(), err
+	}
 
-	// write it to a string for request body
-	s, err = responseDoc.WriteToString()
-	s = html.UnescapeString(s)
+	xml, err := xmlquery.Parse(strings.NewReader(doc.InnerText()))
+	if err != nil {
+		return newBlankAPIGatewayProxyResponse(), err
+	}
 
-	// todo - read map from requester
+	var results []M
+	for kString, vMap := range r.ResponseMap {
+		for _, e := range xmlquery.Find(xml, "//"+kString) {
+			m := make(map[string]interface{})
+			if len(vMap) > 0 {
+				for k := range vMap {
+					m[k] = xmlquery.FindOne(e, "//"+k).InnerText()
+				}
+			} else {
+				m[kString] = e.InnerText()
+			}
+			results = append(results, m)
+		}
+	}
 
-	returnVal.Body = s
-
-	log.Print(tschuss)
-
-	return returnVal, nil
+	// marshal map into json string for response body
+	j, _ := json.Marshal(results)
+	return newAPIGatewayProxyResponse(string(j)), nil
 }
 
-// convert from ISO-8859-1 to native UTF-8
-func getIsoDecodedReader(b []byte) (reader io.Reader) {
-	return charmap.ISO8859_1.NewDecoder().Reader(bytes.NewReader(b))
+func NewSoapRequestBody(r *Requester) (string, error) {
+	resp, err := http.Get(r.RequestUrl)
+	if err != nil {
+		return "", err
+	}
+	doc := etree.Document{}
+	if r.Encoding == "ISO-8859-1" {
+		doc.ReadSettings = etree.ReadSettings{
+			CharsetReader: CharsetReader,
+		}
+	}
+	_, err = doc.ReadFrom(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	if r.RequestMap != nil {
+		for k, v := range r.RequestMap {
+			e := doc.FindElement("//" + k)
+			e.SetText(v)
+		}
+	}
+	return doc.WriteToString()
+}
+
+func CharsetReader(charset string, input io.Reader) (io.Reader, error) {
+	return charmap.ISO8859_1.NewDecoder().Reader(input), nil
+}
+
+func newBlankAPIGatewayProxyResponse() (r events.APIGatewayProxyResponse) {
+	return newAPIGatewayProxyResponse("")
+}
+
+func newAPIGatewayProxyResponse(body string) (r events.APIGatewayProxyResponse) {
+	return events.APIGatewayProxyResponse{
+		Body:            body,
+		StatusCode:      200,
+		IsBase64Encoded: false,
+	}
 }
 
 func main() {
