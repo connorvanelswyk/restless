@@ -4,24 +4,26 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
+	"github.com/antchfx/xmlquery"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/beevik/etree"
-	"html"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 )
 
 type requester struct {
-	ServiceUrl        string            `json:"serviceUrl"` // The endpoint for the desired SOAP service
-	RequestUrl        string            `json:"requestUrl"` // The location of an empty or sample SOAP service request
-	RequestMethod     string            `json:"requestMethod"`
-	RequestProperties map[string]string `json:"requestProperties"`
-	RequestMap        map[string]string `json:"requestMap"`
-	ResponseMap       map[string]string `json:"responseMap"`
+	ServiceUrl        string                       `json:"serviceUrl"` // The endpoint for the desired SOAP service
+	RequestUrl        string                       `json:"requestUrl"` // The location of an empty or sample SOAP service request
+	RequestMethod     string                       `json:"requestMethod"`
+	RequestProperties map[string]string            `json:"requestProperties"`
+	RequestMap        map[string]string            `json:"requestMap"`
+	ResponseMap       map[string]map[string]string `json:"responseMap"`
 }
+
+// M is an alias for map[string]interface{}
+type M map[string]interface{}
 
 func Handler(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 
@@ -29,13 +31,13 @@ func Handler(ctx context.Context, req events.APIGatewayProxyRequest) (events.API
 	r := requester{}
 	err := json.Unmarshal([]byte(req.Body), &r)
 	if err != nil {
-		panic(err.Error())
+		return newBlankAPIGatewayProxyResponse(), err
 	}
 
 	// get the example service request url
 	resp, err := http.Get(r.RequestUrl)
 	if err != nil {
-		panic(err.Error())
+		return newBlankAPIGatewayProxyResponse(), err
 	}
 
 	// create xml from example service request body
@@ -47,13 +49,13 @@ func Handler(ctx context.Context, req events.APIGatewayProxyRequest) (events.API
 	// write it to a string for request body
 	s, err := reqXml.WriteToString()
 	if err != nil {
-		panic(err.Error())
+		return newBlankAPIGatewayProxyResponse(), err
 	}
 
 	// create the service request and set the request headers
 	request, err := http.NewRequest(r.RequestMethod, r.ServiceUrl, strings.NewReader(s))
 	if err != nil {
-		panic(err.Error())
+		return newBlankAPIGatewayProxyResponse(), err
 	}
 	for k, v := range r.RequestProperties {
 		request.Header.Add(k, v)
@@ -63,7 +65,7 @@ func Handler(ctx context.Context, req events.APIGatewayProxyRequest) (events.API
 	client := &http.Client{}
 	resp, err = client.Do(request)
 	if err != nil {
-		panic(err.Error())
+		return newBlankAPIGatewayProxyResponse(), err
 	}
 
 	var reader io.ReadCloser
@@ -71,32 +73,48 @@ func Handler(ctx context.Context, req events.APIGatewayProxyRequest) (events.API
 	case "gzip":
 		reader, err = gzip.NewReader(resp.Body)
 		if err != nil {
-			panic(err.Error())
+			return newBlankAPIGatewayProxyResponse(), err
 		}
 	default:
 		reader = resp.Body
 	}
 
-	// marshal response body bytes into xml string where html is unescaped
-	respXml := etree.NewDocument()
-	_, err = respXml.ReadFrom(reader)
+	doc, err := xmlquery.Parse(reader)
 	if err != nil {
-		panic(err.Error())
-	}
-	s, err = respXml.WriteToString()
-	if err != nil {
-		panic(err.Error())
+		return newBlankAPIGatewayProxyResponse(), err
 	}
 
-	body := createResponseBodyJson(html.UnescapeString(s), r.ResponseMap)
+	xml, err := xmlquery.Parse(strings.NewReader(doc.InnerText()))
+	if err != nil {
+		return newBlankAPIGatewayProxyResponse(), err
+	}
 
-	returnVal := events.APIGatewayProxyResponse{
+	var results []M
+	for kString, vMap := range r.ResponseMap {
+		for _, e := range xmlquery.Find(xml, "//"+kString) {
+			m := make(map[string]interface{})
+			for k := range vMap {
+				m[k] = xmlquery.FindOne(e, "//"+k).InnerText()
+			}
+			results = append(results, m)
+		}
+	}
+
+	// marshal map into json string for response body
+	j, _ := json.Marshal(results)
+	return newAPIGatewayProxyResponse(string(j)), nil
+}
+
+func newBlankAPIGatewayProxyResponse() (r events.APIGatewayProxyResponse) {
+	return newAPIGatewayProxyResponse("")
+}
+
+func newAPIGatewayProxyResponse(body string) (r events.APIGatewayProxyResponse) {
+	return events.APIGatewayProxyResponse{
 		Body:            body,
 		StatusCode:      200,
 		IsBase64Encoded: false,
 	}
-
-	return returnVal, nil
 }
 
 //  update request xml (d) with properties
@@ -108,22 +126,6 @@ func updateRequestXml(m map[string]string, d etree.Document) {
 		e := d.FindElement("//" + k)
 		e.SetText(v)
 	}
-}
-
-func createResponseBodyJson(html string, responseMap map[string]string) (jsonString string) {
-	doc := etree.NewDocument()
-	_, _ = doc.ReadFrom(strings.NewReader(html))
-	log.Println(html)
-	// create json map from parsing doc element text
-	m := make(map[string]string)
-	for k := range responseMap {
-		e := doc.FindElement("//" + k)
-		m[k] = e.Text()
-	}
-
-	// marshal map into json string for response body
-	j, _ := json.Marshal(m)
-	return string(j)
 }
 
 func main() {

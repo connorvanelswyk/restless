@@ -13,6 +13,6 @@
     "resourcePath": "",
     "httpMethod": "POST"
   },
-  "body": "{ \"serviceUrl\": \"https://graphical.weather.gov:443/xml/SOAP_server/ndfdXMLserver.php\", \"requestUrl\": \"https://graphical.weather.gov/xml/docs/SOAP_Requests/GmlLatLonList.xml\", \"requestMethod\": \"POST\", \"requestProperties\": { \"Host\": \"graphical.weather.gov:443\", \"User-Agent\": \"Apache-HttpClient/4.1.1\", \"Content-Type\": \"text/xml;charset=ISO-8859-1\", \"Accept-Encoding\": \"gzip,deflate\"  }, \"requestMap\": { \"requestedTime\": \"2019-06-22T23:59:59\"  }, \"responseMap\": { \"latLonList\": \"\"  }}",
+  "body": "{  \"serviceUrl\": \"https://graphical.weather.gov:443/xml/SOAP_server/ndfdXMLserver.php\",  \"requestUrl\": \"https://graphical.weather.gov/xml/docs/SOAP_Requests/GmlLatLonList.xml\",  \"requestMethod\": \"POST\",  \"requestProperties\": {    \"Host\": \"graphical.weather.gov:443\",    \"User-Agent\": \"Apache-HttpClient/4.1.1\",    \"Content-Type\": \"text/xml;charset=ISO-8859-1\",    \"Accept-Encoding\": \"gzip,deflate\"  },  \"requestMap\": {    \"requestedTime\": \"2019-06-22T23:59:59\"  },  \"responseMap\": {    \"gml:boundedBy\": {      \"gml:coordinates\": \"\"    },    \"gml:featureMember\": {      \"gml:coordinates\": \"\",      \"app:validTime\": \"\",      \"app:maximumTemperature\": \"\"    }  }}",
   "isBase64Encoded": false
 }
