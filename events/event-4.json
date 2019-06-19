@@ -1,0 +1,18 @@
+{
+  "resource": "/",
+  "path": "/",
+  "httpMethod": "POST",
+  "headers": {},
+  "queryStringParameters": null,
+  "pathParameters": null,
+  "stageVariables": null,
+  "requestContext": {
+    "path": "/",
+    "stage": "",
+    "requestId": "",
+    "resourcePath": "",
+    "httpMethod": "POST"
+  },
+  "body": "{ \"serviceUrl\": \"https://graphical.weather.gov:443/xml/SOAP_server/ndfdXMLserver.php\", \"requestUrl\": \"https://graphical.weather.gov/xml/docs/SOAP_Requests/GmlLatLonList.xml\", \"requestMap\": {  \"requestedTime\": \"2019-06-22T23:59:59\"  },  \"responseMap\": {    \"gml:boundedBy\": {      \"gml:coordinates\": \"\"    },    \"gml:featureMember\": {      \"gml:coordinates\": \"\",      \"app:validTime\": \"\",      \"app:maximumTemperature\": \"\"    }  }}",
+  "isBase64Encoded": false
+}

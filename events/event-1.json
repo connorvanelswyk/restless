@@ -1,0 +1,18 @@
+{
+  "resource": "/",
+  "path": "/",
+  "httpMethod": "POST",
+  "headers": {},
+  "queryStringParameters": null,
+  "pathParameters": null,
+  "stageVariables": null,
+  "requestContext": {
+    "path": "/",
+    "stage": "",
+    "requestId": "",
+    "resourcePath": "",
+    "httpMethod": "POST"
+  },
+  "body": "{ \"serviceUrl\": \"https://graphical.weather.gov:443/xml/SOAP_server/ndfdXMLserver.php\", \"requestUrl\": \"https://graphical.weather.gov/xml/docs/SOAP_Requests/LatLonListZipCode.xml\", \"responseMap\": { \"latLonList\": {} } }",
+  "isBase64Encoded": false
+}

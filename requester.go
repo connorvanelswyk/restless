@@ -14,7 +14,7 @@ type Requester struct {
 	Encoding          string                       `json:"encoding,omitempty"`
 	RequestProperties map[string]string            `json:"requestProperties,omitempty"`
 	RequestMap        map[string]string            `json:"requestMap,omitempty"`
-	ResponseMap       map[string]map[string]string `json:"responseMap,omitempty"`
+	ResponseMap       map[string]map[string]string `json:"responseMap"`
 }
 
 const defaultUserAgent = "Apache-HttpClient/4.1.1"
@@ -31,20 +31,15 @@ func NewRequester(inputBody []byte) (*Requester, error) {
 	if _, err := url.ParseRequestURI(r.RequestUrl); err != nil {
 		return r, errors.New("request url is malformed")
 	}
+	if r.Encoding == "" {
+		r.Encoding = "ISO-8859-1"
+	}
 	if r.RequestProperties == nil {
 		r.RequestProperties = map[string]string{
 			"Host":            Host(r.ServiceUrl),
 			"User-Agent":      defaultUserAgent,
-			"Content-Type":    r.Encoding,
+			"Content-Type":    "text/xml;charset=" + r.Encoding,
 			"Accept-Encoding": defaultAcceptEncoding,
-		}
-	}
-	if r.Encoding == "" {
-		ct := r.RequestProperties["Content-Type"]
-		if ct != "" && strings.Contains(ct, "ISO-8859-1") {
-			r.Encoding = "ISO-8859-1"
-		} else {
-			r.Encoding = "UTF-8"
 		}
 	}
 	if r.RequestMethod == "" {
