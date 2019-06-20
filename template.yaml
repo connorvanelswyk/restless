@@ -9,6 +9,3 @@ Resources:
       Handler: restless
       CodeUri: .
       Timeout: 30
-      Environment:
-        Variables:
-          SECRET: "35c760f4-b3dc-4657-b4f3-2c6566d4f42e"
