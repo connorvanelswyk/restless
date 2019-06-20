@@ -16,10 +16,6 @@ go:
 git:
   depth: 1
 
-install:
-  - go get golang.org/x/tools/cmd/cover
-  - go get github.com/mattn/goveralls
-
 # Don't email me the results of the test runs.
 notifications:
   email: false
@@ -29,6 +25,8 @@ notifications:
 # Make sure golangci-lint is vendored.
 before_script:
   - go install github.com/golangci/golangci-lint/cmd/golangci-lint
+  - go install golang.org/x/tools/cmd/cover
+  - go install github.com/mattn/goveralls
 
 # script always runs to completion (set +e). If we have linter issues AND a
 # failing test, we want to see both. Configure golangci-lint with a
