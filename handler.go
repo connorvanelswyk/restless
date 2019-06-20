@@ -9,32 +9,32 @@ import (
 
 func Handler(ctx context.Context, in events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 
-	//
 	sr, err := NewSoaplessRequest(in)
 	if err != nil {
 		return Error(err)
 	}
 
-	//
 	req, err := NewHttpRequest(*sr)
 	if err != nil {
 		return Error(err)
 	}
 
-	// create client and get response from service
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		return Error(err)
 	}
 
-	// marshal map into json string for response body
-	body, err := NewJsonResponseBody(*resp, *sr)
+	json, err := NewJsonResponseBody(*resp, *sr)
 	if err != nil {
 		return Error(err)
 	}
 
-	return Success(body)
+	return events.APIGatewayProxyResponse{
+		Body:            json,
+		StatusCode:      200,
+		IsBase64Encoded: false,
+	}, nil
 }
 
 func Error(err error) (events.APIGatewayProxyResponse, error) {
@@ -43,14 +43,6 @@ func Error(err error) (events.APIGatewayProxyResponse, error) {
 		StatusCode:      400,
 		IsBase64Encoded: false,
 	}, err
-}
-
-func Success(body string) (events.APIGatewayProxyResponse, error) {
-	return events.APIGatewayProxyResponse{
-		Body:            body,
-		StatusCode:      200,
-		IsBase64Encoded: false,
-	}, nil
 }
 
 func main() {
