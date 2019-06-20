@@ -1,12 +1,16 @@
+# soapless (alpha)
+
 [![Build Status][ci-img]][ci]
 [![Coverage Status][coveralls-img]][coveralls]
 [![Report Card][go-img]][go-url]
 
-# RESTless (alpha)
+**soapless** is a go library providing a procedural and configurable SOAP messaging API.
 
-A serverless, RESTful web service for painless SOAP message orchestration.
+## Usage
 
-**Working examples** with Weather.gov SOAP web service:
+Working examples can be demonstrated with the open source SOAP web service from Weather.gov.
+
+_Simple default Latitude & Longitude request_
 ```cmd
 curl \
 -d '{
@@ -18,22 +22,25 @@ curl \
 https://gfv1670v1c.execute-api.us-east-1.amazonaws.com/release | jq
 ```
 
+_Simple configurable Latitude & Longitude request_
 ```cmd
 curl \
 -d '{
-  "serviceUrl": "https://graphical.weather.gov:443/xml/SOAP_server/ndfdXMLserver.php",
-  "requestUrl": "https://graphical.weather.gov/xml/docs/SOAP_Requests/LatLonListSquare.xml",  
+  "service": "https://graphical.weather.gov/xml/SOAP_server/ndfdXMLserver.php",
+  "requestBody": "https://graphical.weather.gov/xml/docs/SOAP_Requests/LatLonListZipCode.xml",
+  "requestMap": { "listZipCodeList": "33401" },
   "responseMap": { "latLonList": {} }
 }' \
 -H 'Content-Type: application/json' \
 https://gfv1670v1c.execute-api.us-east-1.amazonaws.com/release | jq
 ```
 
+_Complex configurable Latitude & Longitude request_
 ```cmd
 curl \
 -d '{
-  "serviceUrl": "https://graphical.weather.gov:443/xml/SOAP_server/ndfdXMLserver.php",
-  "requestUrl": "https://graphical.weather.gov/xml/docs/SOAP_Requests/GmlLatLonList.xml",  
+  "service": "https://graphical.weather.gov:443/xml/SOAP_server/ndfdXMLserver.php",
+  "requestBody": "https://graphical.weather.gov/xml/docs/SOAP_Requests/GmlLatLonList.xml",  
   "requestMap": {
     "requestedTime": "2019-06-22T23:59:59"
   },
