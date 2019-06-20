@@ -10,12 +10,14 @@ env:
 # responsibility to keep their compiler up to date.
 go:
   - 1.12.x
+  - tip # for coveralls
 
 # Only clone the most recent commit.
 git:
   depth: 1
 
 install:
+  - go get golang.org/x/tools/cmd/cover
   - go get github.com/mattn/goveralls
 
 # Don't email me the results of the test runs.
@@ -33,4 +35,5 @@ before_script:
 # .golangci.yml file at the top level of your repo.
 script:
   - golangci-lint run       # run a bunch of code checkers/linters in parallel
-  - go test -v -race ./...  # Run all the tests with the race detector enabled
+  - go test -v -race ./...  # Run the tests with the race detector enabled
+  - go test -v covermode=count -coverprofile=coverage.out # Run the tests with coverage
