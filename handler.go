@@ -30,19 +30,7 @@ func Handler(ctx context.Context, in events.APIGatewayProxyRequest) (events.APIG
 		return Error(err)
 	}
 
-	return events.APIGatewayProxyResponse{
-		Body:            json,
-		StatusCode:      200,
-		IsBase64Encoded: false,
-	}, nil
-}
-
-func Error(err error) (events.APIGatewayProxyResponse, error) {
-	return events.APIGatewayProxyResponse{
-		Body:            err.Error(),
-		StatusCode:      400,
-		IsBase64Encoded: false,
-	}, err
+	return Success(json)
 }
 
 func main() {

@@ -9,6 +9,7 @@ import (
 	"github.com/beevik/etree"
 	"golang.org/x/text/encoding/charmap"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -30,13 +31,13 @@ type M map[string]interface{}
 func NewSoaplessRequest(input events.APIGatewayProxyRequest) (*SoaplessRequest, error) {
 	r := &SoaplessRequest{}
 	if err := json.Unmarshal([]byte(input.Body), r); err != nil {
-		return r, err
+		return nil, err
 	}
 	if _, err := url.ParseRequestURI(r.Service); err != nil {
-		return r, errors.New("service url is malformed")
+		return nil, errors.New("service url is malformed")
 	}
 	if _, err := url.ParseRequestURI(r.RequestBody); err != nil {
-		return r, errors.New("request url is malformed")
+		return nil, errors.New("request url is malformed")
 	}
 	if r.Encoding == "" {
 		r.Encoding = "ISO-8859-1"
@@ -124,6 +125,9 @@ func NewJsonResponseBody(r http.Response, sr SoaplessRequest) (string, error) {
 
 	var results []M
 	for kString, vMap := range sr.ResponseMap {
+		for _, node := range doc.SelectElements(kString) {
+			log.Println(node.InnerText())
+		}
 		for _, e := range xmlquery.Find(xml, "//"+kString) {
 			m := make(map[string]interface{})
 			if len(vMap) > 0 {
@@ -144,4 +148,20 @@ func NewJsonResponseBody(r http.Response, sr SoaplessRequest) (string, error) {
 	}
 
 	return string(j), nil
+}
+
+func Error(err error) (events.APIGatewayProxyResponse, error) {
+	return events.APIGatewayProxyResponse{
+		Body:            err.Error(),
+		StatusCode:      400,
+		IsBase64Encoded: false,
+	}, err
+}
+
+func Success(json string) (events.APIGatewayProxyResponse, error) {
+	return events.APIGatewayProxyResponse{
+		Body:            json,
+		StatusCode:      200,
+		IsBase64Encoded: false,
+	}, nil
 }

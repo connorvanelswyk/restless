@@ -13,6 +13,6 @@
     "resourcePath": "",
     "httpMethod": "POST"
   },
-  "body": "{ \"serviceUrl\": \"https://graphical.weather.gov:443/xml/SOAP_server/ndfdXMLserver.php\", \"requestUrl\": \"https://graphical.weather.gov/xml/docs/SOAP_Requests/LatLonListZipCode.xml\", \"responseMap\": { \"latLonList\": {} } }",
+  "body": "{ \"service\": \"https://graphical.weather.gov:443/xml/SOAP_server/ndfdXMLserver.php\", \"requestBody\": \"https://graphical.weather.gov/xml/docs/SOAP_Requests/LatLonListZipCode.xml\", \"responseMap\": { \"latLonList\": {} } }",
   "isBase64Encoded": false
 }
