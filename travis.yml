@@ -9,6 +9,10 @@ go:
   - 1.12.x
   - tip
 
+branches:
+  only:
+    - master
+
 matrix:
   allow_failures:
     - go: tip

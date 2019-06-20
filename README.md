@@ -1,4 +1,6 @@
+[![Build Status][ci-img]][ci]
 [![Coverage Status][coveralls-img]][coveralls]
+
 
 # RESTless
 
@@ -58,6 +60,7 @@ curl \
 https://gfv1670v1c.execute-api.us-east-1.amazonaws.com/release | jq
 ```
 
-
+[ci-img]: https://travis-ci.com/connorvanelswyk/restless.svg?branch=master
+[ci]: https://travis-ci.com/connorvanelswyk/restless
 [coveralls-img]: https://coveralls.io/repos/github/connorvanelswyk/restless/badge.svg?branch=master
 [coveralls]: https://coveralls.io/github/connorvanelswyk/restless
