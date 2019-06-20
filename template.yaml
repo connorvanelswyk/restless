@@ -2,10 +2,10 @@ AWSTemplateFormatVersion : '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: A simple serverless project to convert transmit SOAP messages in a RESTful manner
 Resources:
-  restless:
+  soapless:
     Type: AWS::Serverless::Function
     Properties:
       Runtime: go1.x
-      Handler: restless
+      Handler: soapless
       CodeUri: .
       Timeout: 30
