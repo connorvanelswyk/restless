@@ -1,5 +1,4 @@
 language: go
-#sudo: false
 
 # Force-enable Go modules. Also force go to use the code in vendor/
 # These will both be unnecessary when Go 1.13 lands.
@@ -10,7 +9,6 @@ env:
 # responsibility to keep their compiler up to date.
 go:
   - 1.12.x
-  - tip # for coveralls
 
 # Only clone the most recent commit.
 git:
