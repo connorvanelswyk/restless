@@ -59,9 +59,9 @@ curl \
 https://gfv1670v1c.execute-api.us-east-1.amazonaws.com/release | jq
 ```
 
-[ci-img]: https://travis-ci.com/connorvanelswyk/restless.svg?branch=master
-[ci]: https://travis-ci.com/connorvanelswyk/restless
-[coveralls-img]: https://coveralls.io/repos/github/connorvanelswyk/restless/badge.svg?branch=master
-[coveralls]: https://coveralls.io/github/connorvanelswyk/restless
-[go-img]: https://goreportcard.com/badge/github.com/connorvanelswyk/restless
-[go-url]: https://goreportcard.com/report/github.com/connorvanelswyk/restless
+[ci-img]: https://travis-ci.com/connorvanelswyk/soapless.svg?branch=master
+[ci]: https://travis-ci.com/connorvanelswyk/soapless
+[coveralls-img]: https://coveralls.io/repos/github/connorvanelswyk/soapless/badge.svg?branch=master
+[coveralls]: https://coveralls.io/github/connorvanelswyk/soapless
+[go-img]: https://goreportcard.com/badge/github.com/connorvanelswyk/soapless
+[go-url]: https://goreportcard.com/report/github.com/connorvanelswyk/soapless
