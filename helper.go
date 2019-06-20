@@ -105,7 +105,6 @@ func NewJsonResponseBody(r http.Response, sr SoaplessRequest) (string, error) {
 	switch r.Header.Get("Content-Encoding") {
 	case "gzip":
 		reader, err = gzip.NewReader(r.Body)
-		break
 	default:
 		reader = r.Body
 	}
