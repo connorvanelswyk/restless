@@ -1,12 +1,12 @@
 [![Build Status][ci-img]][ci]
 [![Coverage Status][coveralls-img]][coveralls]
+[![Report Card][go-img]][go-url]
 
-
-# RESTless
+# RESTless (alpha)
 
 A serverless, RESTful web service for painless SOAP message orchestration.
 
-**Example**
+**Working examples** with Weather.gov SOAP web service:
 ```cmd
 curl \
 -d '{
@@ -17,14 +17,6 @@ curl \
 -H 'Content-Type: application/json' \
 https://gfv1670v1c.execute-api.us-east-1.amazonaws.com/release | jq
 ```
-
-## Requirements
-
-## Usage
-
-### as an api
-
-### as src
 
 ```cmd
 curl \
@@ -64,3 +56,5 @@ https://gfv1670v1c.execute-api.us-east-1.amazonaws.com/release | jq
 [ci]: https://travis-ci.com/connorvanelswyk/restless
 [coveralls-img]: https://coveralls.io/repos/github/connorvanelswyk/restless/badge.svg?branch=master
 [coveralls]: https://coveralls.io/github/connorvanelswyk/restless
+[go-img]: https://goreportcard.com/badge/github.com/connorvanelswyk/restless
+[go-url]: https://goreportcard.com/report/github.com/connorvanelswyk/restless

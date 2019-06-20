@@ -1,3 +1,4 @@
+# .travis.yml
 language: go
 
 # Force-enable Go modules. Also force go to use the code in vendor/
@@ -21,4 +22,18 @@ before_install:
   - go get github.com/mattn/goveralls
 
 script:
-  - $GOPATH/bin/goveralls -service=travis-pro
+  - $HOME/gopath/bin/goveralls -v -service=travis-ci
+
+services:
+  - docker
+
+after_success:
+  - test -n "$TRAVIS_TAG" && curl -sL https://git.io/goreleaser | bash
+  - mkdir -p dist
+  - CGO_ENABLED="0" GOARCH="amd64" GOOS="linux" go build -a -installsuffix cgo -o ./dist/gomotics
+  - docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
+  - export REPO=$DOCKER_USER/gomotics
+  - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "latest"; else echo $TRAVIS_TAG ; fi`
+  - echo $REPO:$TAG
+  - docker build -f Dockerfile -t $REPO:$TAG .
+  - docker push $REPO
