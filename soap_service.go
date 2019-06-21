@@ -1,7 +1,6 @@
-package repo
+package main
 
 import (
-	"../model"
 	"github.com/beevik/etree"
 	"golang.org/x/text/encoding/charmap"
 	"io"
@@ -9,7 +8,7 @@ import (
 	"strings"
 )
 
-func NewSoapResponse(sr model.SoaplessRequest) (*http.Response, error) {
+func NewSoapResponse(sr SoaplessRequest) (*http.Response, error) {
 	resp, err := http.Get(sr.RequestBody)
 	if err != nil {
 		return nil, err

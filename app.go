@@ -1,8 +1,6 @@
-package usecase
+package main
 
 import (
-	"../model"
-	"../repo"
 	"compress/gzip"
 	"encoding/json"
 	"github.com/antchfx/xmlquery"
@@ -17,12 +15,12 @@ import (
 type M map[string]interface{}
 
 func Handle(in events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	sr, err := model.NewSoaplessRequest(in)
+	sr, err := NewSoaplessRequest(in)
 	if err != nil {
 		return Error(err)
 	}
 
-	resp, err := repo.NewSoapResponse(*sr)
+	resp, err := NewSoapResponse(*sr)
 	if err != nil {
 		return Error(err)
 	}
@@ -35,7 +33,7 @@ func Handle(in events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, e
 	return Success(j)
 }
 
-func NewJsonResponseBody(r http.Response, sr model.SoaplessRequest) (string, error) {
+func NewJsonResponseBody(r http.Response, sr SoaplessRequest) (string, error) {
 	var reader io.ReadCloser
 	var err error
 	switch r.Header.Get("Content-Encoding") {
